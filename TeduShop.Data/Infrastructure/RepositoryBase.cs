@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace TeduShop.Data.Infrastructure
 {
-    public abstract class RepositoryBase<T> where T : class
+    public abstract class RepositoryBase<T> : IRepository<T> where T : class
     {
         private TeduShopDbContext dataContext;
         private readonly IDbSet<T> dbSet;
@@ -97,7 +97,31 @@ namespace TeduShop.Data.Infrastructure
             return dataContext.Set<T>().Where<T>(predicate).AsQueryable<T>();
         }
 
-        //public virtual IQueryable<T> GetMultiPaging(Expression<Func<T,bool>> predicate, out int total, int index = 0, int size = 0)
+        public virtual IQueryable<T> GetMultiPaging(Expression<Func<T,bool>> predicate, out int total, int index = 0, int size = 20,string[] includes = null)
+        {
+            int skipCount = index * size;
+            IQueryable<T> _resetSet;
+
+            if(includes != null && includes.Count() > 0)
+            {
+                var query = dataContext.Set<T>().Include(includes.First());
+                foreach (var include in includes.Skip(1))
+                    query = query.Include(include);
+                _resetSet = predicate != null ? query.Where<T>(predicate).AsQueryable() : query.AsQueryable();
+            }
+            else
+            {
+                _resetSet = predicate != null ? dataContext.Set<T>().Where(predicate).AsQueryable() : dataContext.Set<T>().AsQueryable();
+            }
+            _resetSet = skipCount == 0 ? _resetSet.Take(size) : _resetSet.Skip(skipCount).Take(size);
+            total = _resetSet.Count();
+            return _resetSet.AsQueryable();
+        }
+
+        public bool CheckContains(Expression<Func<T,bool>> predicate)
+        {
+            return dataContext.Set<T>().Count<T>(predicate) > 0;
+        }
 
     }
 }

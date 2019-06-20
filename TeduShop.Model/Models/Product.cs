@@ -30,7 +30,16 @@ namespace TeduShop.Model.Models
 
         [MaxLength(256)]
         public string Image { get; set; }
-        public XElement MoreImages { get; set; }
+
+        [Column(TypeName = "xml")]
+        public string MoreImages { get; set; }
+        [NotMapped]
+        public XElement MoreImagesXMl
+        {
+            get { return XElement.Parse(MoreImages); }
+            set { MoreImages = value.ToString(); }
+        }
+
         public decimal Price { get; set; }
         public decimal? Promotion { get; set; }
         public int? Warranty { get; set; }
@@ -46,4 +55,5 @@ namespace TeduShop.Model.Models
         [ForeignKey("CategoryID")]
         public virtual ProductCategory ProductCategory { get; set; }
     }
+
 }
